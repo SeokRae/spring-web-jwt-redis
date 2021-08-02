@@ -1,0 +1,36 @@
+server:
+  port: 8081
+
+jwt:
+  expired_date: 864_000_000
+  secret: 12345678901234567890123456789000
+
+spring:
+  application:
+    name: jwt-redis-service
+  # H2
+  h2:
+    console:
+      enabled: true
+      settings:
+        web-allow-others: true
+      path: /h2-console
+  # DataSource
+  database:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:testdb
+    username: sa
+    password:
+  # JPA
+  jpa:
+    properties:
+      hibernate:
+        diarect: org.hibernate.dialect.MySQL5InnoDBDialect
+        show_sql: true
+        format_sql: true
+        ddl-auto: update # ???? ??? ???? ??
+  # Redis
+  redis:
+    host: 127.0.0.1
+    port: 6379
+    password:
