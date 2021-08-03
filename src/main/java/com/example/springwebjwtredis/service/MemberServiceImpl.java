@@ -1,6 +1,7 @@
 package com.example.springwebjwtredis.service;
 
 import com.example.springwebjwtredis.aop.exception.MemberNotFoundException;
+import com.example.springwebjwtredis.aop.exception.PasswordNotEqualsException;
 import com.example.springwebjwtredis.domain.Member;
 import com.example.springwebjwtredis.domain.MemberDto;
 import com.example.springwebjwtredis.repository.MemberRepository;
@@ -32,6 +33,7 @@ public class MemberServiceImpl implements MemberService {
 
     /**
      * TODO 세션으로 비밀번호 가져오든, 인가 처리를 통해 하던지 비번 비교해서 사용자 맞으면 삭제
+     *
      * @param memberId
      * @return
      */
@@ -42,6 +44,17 @@ public class MemberServiceImpl implements MemberService {
         // 삭제 전 사용자 검증
         memberRepository.delete(member);
         return MemberDto.builder().id(memberId).build();
+    }
+
+    @Override
+    public MemberDto findMember(String email, String password) {
+        Member member = memberRepository.findByEmail(email)
+                .orElseThrow(MemberNotFoundException::new);
+        // 패스워드 검증 후에 사용자 정보 조회
+        if (!member.getPassword().equals(password)) {
+            throw new PasswordNotEqualsException("사용자 패스워드 정보가 일치하지 않습니다.");
+        }
+        return MemberDto.toDto(member);
     }
 
 }

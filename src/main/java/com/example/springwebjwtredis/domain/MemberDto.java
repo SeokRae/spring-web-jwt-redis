@@ -4,9 +4,11 @@ import com.example.springwebjwtredis.dto.ResponseMember;
 import lombok.Builder;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Setter
 @Getter
+@ToString(exclude = "password")
 public class MemberDto {
     private Long id;
     private String email;

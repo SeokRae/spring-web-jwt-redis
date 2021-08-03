@@ -44,6 +44,6 @@ public class MemberController {
 
         MemberDto memberDto = memberService.deleteMember(memberId);
         log.info("사용자 삭제: {}", memberId);
-        return ResponseEntity.ok().body("");
+        return ResponseEntity.ok().body(MemberDto.toResponse(memberDto));
     }
 }

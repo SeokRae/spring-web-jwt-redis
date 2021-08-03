@@ -8,4 +8,7 @@ public interface MemberService {
     MemberDto updateMember(Long memberId, MemberDto member);
 
     MemberDto deleteMember(Long memberId);
+
+    MemberDto findMember(String email, String password);
+
 }

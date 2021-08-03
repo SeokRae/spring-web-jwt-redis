@@ -4,9 +4,11 @@ import com.example.springwebjwtredis.domain.Member;
 import com.example.springwebjwtredis.domain.MemberDto;
 import lombok.Getter;
 import lombok.Setter;
+import lombok.ToString;
 
 @Getter
 @Setter
+@ToString
 public class RequestAddMember {
     private String email;
     private String name;

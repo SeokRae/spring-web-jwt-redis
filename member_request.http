@@ -3,19 +3,27 @@ POST http://localhost:8081/members
 Content-Type: application/json
 
 {
-  "email" : "seok@gmail.com",
-  "password" : "1234",
-  "name" : "seokrae"
+  "email": "seok@gmail.com",
+  "password": "1234",
+  "name": "seokrae"
 }
 
+### 로그인
+POST http://localhost:8081/login
+Content-Type: application/json
+
+{
+  "email": "seok@gmail.com",
+  "password": "1234"
+}
 
 ### 사용자 수정
 PUT http://localhost:8081/members/1
 Content-Type: application/json
 
 {
-  "password" : "1234",
-  "name" : "seok"
+  "password": "1234",
+  "name": "seok"
 }
 
 
@@ -25,6 +33,6 @@ DELETE http://localhost:8081/members/1
 Content-Type: application/json
 
 {
-  "password" : "1234",
-  "name" : "seok"
+  "password": "1234",
+  "name": "seok"
 }
