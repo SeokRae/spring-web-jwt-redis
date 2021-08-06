@@ -3,10 +3,12 @@ package com.example.springwebjwtredis.aop.auth;
 import com.example.springwebjwtredis.aop.jwt.JwtUtil;
 import com.example.springwebjwtredis.domain.MemberDto;
 import com.example.springwebjwtredis.dto.RequestLoginMember;
+import com.example.springwebjwtredis.redis.domain.RedisMemberToken;
+import com.example.springwebjwtredis.redis.repository.CustomRedisRepository;
 import com.example.springwebjwtredis.service.MemberService;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.util.StreamUtils;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
@@ -18,23 +20,22 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.util.Map;
+
+import static com.example.springwebjwtredis.aop.jwt.JwtUtil.TOKEN_ACCESS_EXPIRED;
 
 @Slf4j
 public class AuthenticationInterceptor implements HandlerInterceptor {
 
-    private final JwtUtil jwtUtil;
     private final ObjectMapper mapper = new ObjectMapper();
-    @Autowired
-    private MemberService memberService;
+    private final CustomRedisRepository redisRepository;
+    private final MemberService memberService;
+    private final JwtUtil jwtUtil;
 
-    public AuthenticationInterceptor(JwtUtil jwtUtil) {
+    public AuthenticationInterceptor(JwtUtil jwtUtil, MemberService memberService, CustomRedisRepository redisRepository) {
         this.jwtUtil = jwtUtil;
-    }
-
-    private RequestLoginMember getBodyStream(HttpServletRequest request) throws IOException {
-        ServletInputStream inputStream = request.getInputStream();
-        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
-        return mapper.readValue(messageBody, RequestLoginMember.class);
+        this.memberService = memberService;
+        this.redisRepository = redisRepository;
     }
 
     @Override
@@ -52,15 +53,34 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        String tokens = jwtUtil.createTokens(memberDto);
-
-        response.addHeader("Authorization", "Bearer " + tokens);
-
+        request.setAttribute("memberDto", memberDto);
         return true;
+    }
+
+    private RequestLoginMember getBodyStream(HttpServletRequest request) throws IOException {
+        ServletInputStream inputStream = request.getInputStream();
+        String messageBody = StreamUtils.copyToString(inputStream, StandardCharsets.UTF_8);
+        return mapper.readValue(messageBody, RequestLoginMember.class);
     }
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
         log.info("AuthenticationInterceptor : postHandle()");
+
+        // 사용자 조회
+        MemberDto memberDto = (MemberDto) request.getAttribute("memberDto");
+
+        String tokens = jwtUtil.generateToken(memberDto, JwtUtil.TOKEN_ACCESS_EXPIRED);
+        String signature = tokens.split("\\.")[2];
+
+        redisRepository.saveRedis(
+                signature,
+                RedisMemberToken.builder()
+                        .email(memberDto.getEmail())
+                        .name(memberDto.getName())
+                        .build()
+        );
+
+        response.addHeader(HttpHeaders.AUTHORIZATION, "Bearer " + tokens);
     }
 }

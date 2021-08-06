@@ -9,7 +9,7 @@ Content-Type: application/json
 }
 
 ### 로그인
-POST http://localhost:8081/login
+POST http://localhost:8081/auth/login
 Content-Type: application/json
 
 {
@@ -19,11 +19,13 @@ Content-Type: application/json
 
 ### 사용자 수정
 PUT http://localhost:8081/members/1
+Authorization: Bearer eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJuYW1lIjoic2Vva3JhZSIsImVtYWlsIjoic2Vva0BnbWFpbC5jb20iLCJpc3MiOiJqd3QtcmVkaXMtc2VydmljZSIsInN1YiI6Imp3dC1zZXJ2aWNlIiwiYXVkIjoic2VvayIsImlhdCI6MTYyODI0MzIzMiwiZXhwIjoxNjI4MjQzMjkyfQ.a4i3VIm7IIGmbmHgnQLFuiftSC4dwzA7lfxQwjxpd3
 Content-Type: application/json
 
 {
+  "email": "seok@gmail.com",
   "password": "1234",
-  "name": "seok"
+  "name": "seokrae"
 }
 
 

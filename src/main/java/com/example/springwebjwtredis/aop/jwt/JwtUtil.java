@@ -17,7 +17,7 @@ import java.util.Map;
 public class JwtUtil {
 
     private static final int TOKEN_DEFAULT_EXPIRED = 0;
-    private static final int TOKEN_ACCESS_EXPIRED = 1;
+    public static final int TOKEN_ACCESS_EXPIRED = 1;
 
     private final String issue;
     private final Key key;
@@ -29,17 +29,17 @@ public class JwtUtil {
         this.expiredDate = expiredDate;
     }
 
-    public String createTokens(MemberDto memberDto) {
-        // DB 조회 시 오류 발생 처리 필요
-        String email = memberDto.getEmail();
-        // 엑세스 토큰 발급 및 헤더 저장
-        String accessToken = generateToken(memberDto, TOKEN_ACCESS_EXPIRED);
-//        accessTokenService.add(email, accessToken);
-        // 리프레시 토큰 발급 및 DB 저장
-//        String refreshToken = jwtUtils.generateToken(memberDto, JwtConst.REFRESH_EXPIRED);
-//        refreshTokenService.add(email, refreshToken);
-        return accessToken;
-    }
+//    public String createTokens(MemberDto memberDto, int plus) {
+//        // DB 조회 시 오류 발생 처리 필요
+//        String email = memberDto.getEmail();
+//        // 엑세스 토큰 발급 및 헤더 저장
+//        String accessToken = generateToken(memberDto, TOKEN_ACCESS_EXPIRED);
+////        accessTokenService.add(email, accessToken);
+//        // 리프레시 토큰 발급 및 DB 저장
+////        String refreshToken = jwtUtils.generateToken(memberDto, JwtConst.REFRESH_EXPIRED);
+////        refreshTokenService.add(email, refreshToken);
+//        return accessToken;
+//    }
 
     /**
      * JWT 토큰 생성 메서드
@@ -62,7 +62,6 @@ public class JwtUtil {
                 .setAudience("seok") // 토큰 대상자
                 .setIssuedAt(createDate(TOKEN_DEFAULT_EXPIRED)) // 토큰 발생 시간
                 .setExpiration(createDate(plusMinutes)) // 만료시간
-
                 .compact();
     }
 
@@ -101,7 +100,8 @@ public class JwtUtil {
         // 비공개 클레임으로 사용자의 이름과 이메일을 설정, 세션 처럼 정보를 넣고 빼서 쓸 수 있다.
         Map<String, Object> claims = new HashMap<>();
 
-        claims.put("id", memberDto.getEmail());
+        claims.put("email", memberDto.getEmail());
+        claims.put("name", memberDto.getName());
 //        claims.put("role", memberDto.getRole());
 
         log.info("Token 2: {}", claims);
@@ -118,24 +118,25 @@ public class JwtUtil {
         log.info("token Body: {}", Jwts.parser().setSigningKey(key).parseClaimsJws(token).getBody());
         return Jwts.parser()
                 .setSigningKey(key)
-                .parseClaimsJws(token).getBody();
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     /**
      * @param token JWT의 Payload 값
      * @return payload에서 현재 프로젝트에서 설정한 사용자 값을 구분하는 값인 userEmail을 반환
      */
-    public String getUserNameFromToken(String token) {
+    public String getUserEmail(String token) {
         /* 복호화된 Payload로 id 확인 */
         Claims claims = getClaimsFormToken(token);
-        return (String) claims.get("id");
+        return (String) claims.get("email");
     }
 
     /**
      * @param token 사용자 정보를 HS256로 암호화한 JWT
      * @return token 복호화하여 Payload 값 반환
      */
-    public Claims getClaims(String token) {
+    private Claims getClaims(String token) {
         // Jws는 sign이 포함된 JWT를 말함
         return Jwts.parser()
                 .setSigningKey(key)
@@ -162,22 +163,22 @@ public class JwtUtil {
             log.info("=================== Claims ===================");
             return true;
         } catch (SignatureException exception) {
-            log.error("SignatureException 오류");
+            log.debug("SignatureException 오류");
         } catch (MalformedJwtException exception) {
-            log.error("구조적인 문제가 있는 JWT인 경우");
+            log.debug("구조적인 문제가 있는 JWT인 경우");
         } catch (UnsupportedJwtException exception) {
-            log.error("암호화된 JWT를 사용하는 애프리케이션에 암호화되지 않은 JWT가 전달되는 경우");
+            log.debug("암호화된 JWT를 사용하는 애프리케이션에 암호화되지 않은 JWT가 전달되는 경우");
             /* access Token 예외 발생으로 인해 refreshToken 체크 시점 */
 //        } catch (ExpiredJwtException exception) {
-//            log.error("Token ExpiredJwtException");
+//            log.debug("Token ExpiredJwtException");
         } catch (PrematureJwtException exception) {
-            log.error("접근이 허용되기 전인 JWT가 수신된 경우");
+            log.debug("접근이 허용되기 전인 JWT가 수신된 경우");
         } catch (ClaimJwtException exception) {
-            log.error("JWT 권한claim 검사가 실패했을 때");
+            log.debug("ClaimJwtException JWT 권한claim 검사가 실패했을 때");
         } catch (JwtException exception) {
-            log.error("Token Tampered");
+            log.debug("Token Tampered");
         } catch (NullPointerException exception) {
-            log.error("Token is null");
+            log.debug("Token is null");
             throw new RuntimeException("Token is null");
         }
         return false;

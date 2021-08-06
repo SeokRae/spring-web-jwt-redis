@@ -33,7 +33,7 @@ public class Member {
         this.name = name;
     }
 
-    public void udpateInfo(MemberDto member) {
+    public void updateInfo(MemberDto member) {
         if (!member.getName().isEmpty()) {
             this.name = member.getName();
         }

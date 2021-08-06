@@ -27,7 +27,7 @@ public class MemberServiceImpl implements MemberService {
     public MemberDto updateMember(Long memberId, MemberDto member) {
         Member findMember = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
-        findMember.udpateInfo(member);
+        findMember.updateInfo(member);
         return MemberDto.toDto(findMember);
     }
 
@@ -43,7 +43,9 @@ public class MemberServiceImpl implements MemberService {
                 .orElseThrow(MemberNotFoundException::new);
         // 삭제 전 사용자 검증
         memberRepository.delete(member);
-        return MemberDto.builder().id(memberId).build();
+        return MemberDto.builder()
+                .id(memberId)
+                .build();
     }
 
     @Override
