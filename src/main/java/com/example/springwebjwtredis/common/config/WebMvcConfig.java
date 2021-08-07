@@ -1,9 +1,9 @@
 package com.example.springwebjwtredis.common.config;
 
+import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
 import com.example.springwebjwtredis.common.aop.auth.AuthenticationInterceptor;
 import com.example.springwebjwtredis.common.aop.auth.AuthorizationInterceptor;
 import com.example.springwebjwtredis.common.aop.jwt.JwtUtil;
-import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
 import com.example.springwebjwtredis.member.service.MemberService;
 import com.example.springwebjwtredis.refresh.service.RefreshTokenService;
 import org.springframework.context.annotation.Bean;
@@ -34,7 +34,7 @@ public class WebMvcConfig implements WebMvcConfigurer {
 
     @Bean
     public AuthorizationInterceptor authorizationInterceptor() {
-        return new AuthorizationInterceptor(refreshTokenService, accessTokenRepository, memberService, jwtUtil);
+        return new AuthorizationInterceptor(accessTokenRepository, jwtUtil);
     }
 
     @Override

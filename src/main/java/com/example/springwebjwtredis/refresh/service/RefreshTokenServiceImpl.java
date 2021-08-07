@@ -23,7 +23,6 @@ public class RefreshTokenServiceImpl implements RefreshTokenService {
                 .username(memberDto.getName())
                 .refreshToken(refreshToken)
                 .build();
-        // refresh token 저장
         refreshTokenRepository.save(refreshTokenEntity);
     }
 

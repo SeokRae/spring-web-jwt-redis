@@ -138,6 +138,7 @@ public class JwtUtil {
                 .email(email).name(name)
                 .build();
     }
+
     /**
      * @param token 사용자 정보를 HS256로 암호화한 JWT
      * @return token 복호화하여 Payload 값 반환

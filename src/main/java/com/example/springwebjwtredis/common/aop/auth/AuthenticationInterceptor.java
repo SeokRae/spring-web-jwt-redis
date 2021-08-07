@@ -1,10 +1,10 @@
 package com.example.springwebjwtredis.common.aop.auth;
 
+import com.example.springwebjwtredis.access.domain.AccessTokenPayload;
+import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
 import com.example.springwebjwtredis.common.aop.jwt.JwtUtil;
 import com.example.springwebjwtredis.member.domain.MemberDto;
 import com.example.springwebjwtredis.member.dto.RequestLoginMember;
-import com.example.springwebjwtredis.access.domain.AccessTokenPayload;
-import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
 import com.example.springwebjwtredis.member.service.MemberService;
 import com.example.springwebjwtredis.refresh.service.RefreshTokenService;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -21,7 +21,8 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.*;
+import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.TOKEN_DEFAULT_EXPIRED;
+import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.TOKEN_REFRESH_EXPIRED;
 
 @Slf4j
 public class AuthenticationInterceptor implements HandlerInterceptor {
@@ -70,7 +71,9 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         return mapper.readValue(messageBody, RequestLoginMember.class);
     }
 
-    /** 엑세스 토큰 발급 */
+    /**
+     * 엑세스 토큰 발급
+     */
     private String generateAccessToken(MemberDto memberDto) {
         String tokens = jwtUtil.generateToken(memberDto, TOKEN_DEFAULT_EXPIRED.plusTime);
         String signature = tokens.split("\\.")[2];
@@ -86,7 +89,9 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         return tokens;
     }
 
-    /** 리플레시 토큰 발급 */
+    /**
+     * 리플레시 토큰 발급
+     */
     private String generateRefreshToken(MemberDto memberDto) {
         String refreshToken = jwtUtil.generateToken(memberDto, TOKEN_REFRESH_EXPIRED.plusTime);
         refreshTokenService.save(memberDto, refreshToken);

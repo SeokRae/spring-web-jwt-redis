@@ -4,8 +4,6 @@ import com.example.springwebjwtredis.access.domain.AccessTokenPayload;
 import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
 import com.example.springwebjwtredis.common.aop.jwt.JwtUtil;
 import com.example.springwebjwtredis.member.domain.MemberDto;
-import com.example.springwebjwtredis.member.service.MemberService;
-import com.example.springwebjwtredis.refresh.service.RefreshTokenService;
 import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -19,23 +17,14 @@ import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.TOKEN_
 @Slf4j
 public class AuthorizationInterceptor implements HandlerInterceptor {
 
-    private final RefreshTokenService refreshTokenService;
-    private final AccessTokenRepository redisRepository;
-    private final MemberService memberService;
+    private final AccessTokenRepository accessTokenRepository;
     private final JwtUtil jwtUtil;
 
-    public AuthorizationInterceptor(RefreshTokenService refreshTokenService, AccessTokenRepository redisRepository, MemberService memberService, JwtUtil jwtUtil) {
-        this.refreshTokenService = refreshTokenService;
-        this.redisRepository = redisRepository;
-        this.memberService = memberService;
+    public AuthorizationInterceptor(AccessTokenRepository accessTokenRepository, JwtUtil jwtUtil) {
+        this.accessTokenRepository = accessTokenRepository;
         this.jwtUtil = jwtUtil;
     }
 
-
-    /**
-     * 1. accessToken의 유효성을 검사
-     * 1.1
-     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         log.info("AuthorizationInterceptor : preHandle()");
@@ -44,7 +33,6 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         String refreshToken = request.getHeader("jwt-refresh-token");
 
         try {
-            // accessToken이 유효하고 Redis에도 동일한 accessToken이 존재하는 경우 자원 접근 허용
             if (jwtUtil.isValidToken(accessToken) || hasAccessToken(accessToken)) {
                 return true;
             }
@@ -57,7 +45,6 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
             }
             log.debug("[JWT Exception] Invalid RefreshToken");
         }
-
         return false;
     }
 
@@ -68,7 +55,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         String signature = newAccessToken.split("\\.")[2];
 
         /* 레디스에 hashKey 값은 accessToken의 signature 값으로 설정 */
-        redisRepository.saveRedis(
+        accessTokenRepository.saveRedis(
                 signature,
                 AccessTokenPayload.builder()
                         .email(memberDto.getEmail())
@@ -80,7 +67,7 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
     }
 
     private boolean hasAccessToken(String hashKey) {
-        return redisRepository.hasRedisByAccessToken(hashKey);
+        return accessTokenRepository.hasRedisByAccessToken(hashKey);
     }
 
     @Override

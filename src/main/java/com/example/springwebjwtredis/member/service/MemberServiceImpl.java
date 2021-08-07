@@ -1,9 +1,9 @@
 package com.example.springwebjwtredis.member.service;
 
-import com.example.springwebjwtredis.member.exception.MemberNotFoundException;
-import com.example.springwebjwtredis.member.exception.PasswordNotEqualsException;
 import com.example.springwebjwtredis.member.domain.Member;
 import com.example.springwebjwtredis.member.domain.MemberDto;
+import com.example.springwebjwtredis.member.exception.MemberNotFoundException;
+import com.example.springwebjwtredis.member.exception.PasswordNotEqualsException;
 import com.example.springwebjwtredis.member.repository.MemberRepository;
 import org.springframework.stereotype.Service;
 
@@ -31,17 +31,11 @@ public class MemberServiceImpl implements MemberService {
         return MemberDto.toDto(findMember);
     }
 
-    /**
-     * TODO 세션으로 비밀번호 가져오든, 인가 처리를 통해 하던지 비번 비교해서 사용자 맞으면 삭제
-     *
-     * @param memberId
-     * @return
-     */
     @Override
     public MemberDto deleteMember(Long memberId) {
         Member member = memberRepository.findById(memberId)
                 .orElseThrow(MemberNotFoundException::new);
-        // 삭제 전 사용자 검증
+
         memberRepository.delete(member);
         return MemberDto.builder()
                 .id(memberId)

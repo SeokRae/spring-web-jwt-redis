@@ -7,7 +7,7 @@ import java.io.Serializable;
 
 @Getter
 @ToString
-@RedisHash("user")
+@RedisHash("member")
 @NoArgsConstructor(access = AccessLevel.PROTECTED)
 public class AccessTokenPayload implements Serializable {
 
