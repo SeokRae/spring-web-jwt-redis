@@ -21,8 +21,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 
-import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.TOKEN_ACCESS_EXPIRED;
-import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.TOKEN_REFRESH_EXPIRED;
+import static com.example.springwebjwtredis.common.aop.jwt.JwtExpiredType.*;
 
 @Slf4j
 public class AuthenticationInterceptor implements HandlerInterceptor {
@@ -56,7 +55,12 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
             return false;
         }
 
-        request.setAttribute("memberDto", memberDto);
+        // accessToken, refreshToken 발급
+        String accessToken = generateAccessToken(memberDto);
+        String refreshToken = generateRefreshToken(memberDto);
+
+        response.addHeader("jwt-access-token", accessToken);
+        response.addHeader("jwt-refresh-token", refreshToken);
         return true;
     }
 
@@ -66,24 +70,9 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         return mapper.readValue(messageBody, RequestLoginMember.class);
     }
 
-    @Override
-    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
-        log.info("AuthenticationInterceptor : postHandle()");
-
-        // 사용자 조회
-        MemberDto memberDto = (MemberDto) request.getAttribute("memberDto");
-
-        // accessToken, refreshToken 발급
-        String accessToken = generateAccessToken(memberDto);
-        String refreshToken = generateRefreshToken(memberDto);
-
-        response.addHeader("jwt-access-token", accessToken);
-        response.addHeader("jwt-refresh-token", refreshToken);
-    }
-
     /** 엑세스 토큰 발급 */
     private String generateAccessToken(MemberDto memberDto) {
-        String tokens = jwtUtil.generateToken(memberDto, TOKEN_ACCESS_EXPIRED.plusTime);
+        String tokens = jwtUtil.generateToken(memberDto, TOKEN_DEFAULT_EXPIRED.plusTime);
         String signature = tokens.split("\\.")[2];
 
         /* 레디스에 hashKey 값은 accessToken의 signature 값으로 설정 */
@@ -102,5 +91,10 @@ public class AuthenticationInterceptor implements HandlerInterceptor {
         String refreshToken = jwtUtil.generateToken(memberDto, TOKEN_REFRESH_EXPIRED.plusTime);
         refreshTokenService.save(memberDto, refreshToken);
         return refreshToken;
+    }
+
+    @Override
+    public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) {
+        log.info("AuthenticationInterceptor : postHandle()");
     }
 }

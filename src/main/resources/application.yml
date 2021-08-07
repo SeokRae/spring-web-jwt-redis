@@ -40,3 +40,6 @@ logging:
     org:
       springframework:
         web: debug
+    com:
+      example:
+        springwebjwtredis: debug

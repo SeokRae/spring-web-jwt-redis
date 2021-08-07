@@ -1,13 +1,12 @@
 package com.example.springwebjwtredis.common.aop.auth;
 
-import com.example.springwebjwtredis.common.aop.jwt.JwtUtil;
-import com.example.springwebjwtredis.member.domain.MemberDto;
-import com.example.springwebjwtredis.refresh.domain.RefreshTokenEntity;
 import com.example.springwebjwtredis.access.domain.AccessTokenPayload;
 import com.example.springwebjwtredis.access.repository.AccessTokenRepository;
+import com.example.springwebjwtredis.common.aop.jwt.JwtUtil;
+import com.example.springwebjwtredis.member.domain.MemberDto;
 import com.example.springwebjwtredis.member.service.MemberService;
 import com.example.springwebjwtredis.refresh.service.RefreshTokenService;
-import io.jsonwebtoken.ExpiredJwtException;
+import io.jsonwebtoken.JwtException;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.servlet.HandlerInterceptor;
 import org.springframework.web.servlet.ModelAndView;
@@ -33,6 +32,10 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
     }
 
 
+    /**
+     * 1. accessToken의 유효성을 검사
+     * 1.1
+     */
     @Override
     public boolean preHandle(HttpServletRequest request, HttpServletResponse response, Object handler) throws Exception {
         log.info("AuthorizationInterceptor : preHandle()");
@@ -41,34 +44,30 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
         String refreshToken = request.getHeader("jwt-refresh-token");
 
         try {
-
-            if (jwtUtil.isValidToken(accessToken)) { // 1. accessToken의 유효성 검사
-                log.info(" Valid AccessToken: {}", accessToken);
-                String signature = accessToken.split("\\.")[2];
-
-                if (!hasAccessToken(signature)) { // 2. Redis에 accessToken 보유 여부
-                    log.info(" Not Exists AccessToken in Redis ");
-                } else {
-                    log.info(" Success Resource Access ");
-                    return true;
-                }
+            // accessToken이 유효하고 Redis에도 동일한 accessToken이 존재하는 경우 자원 접근 허용
+            if (jwtUtil.isValidToken(accessToken) || hasAccessToken(accessToken)) {
+                return true;
             }
 
-        } catch (ExpiredJwtException e) {
-            log.debug("Expired Jwt Exception 으로 재발급");
+        } catch (JwtException e) {
+            log.info("[JWT Exception] expired accessToken");
             if (jwtUtil.isValidToken(refreshToken)) {
-                RefreshTokenEntity byEmail = refreshTokenService.findByEmail(jwtUtil.getMemberByEmail(refreshToken));
-
-
+                reGenerateAccessToken(response, refreshToken);
+                return true;
             }
+            log.debug("[JWT Exception] Invalid RefreshToken");
         }
+
         return false;
     }
 
-    private String generateAccessToken(MemberDto memberDto) {
-        String tokens = jwtUtil.generateToken(memberDto, TOKEN_ACCESS_EXPIRED.plusTime);
-        String signature = tokens.split("\\.")[2];
+    private void reGenerateAccessToken(HttpServletResponse response, String refreshToken) {
+        MemberDto memberDto = jwtUtil.getMemberDto(refreshToken);
 
+        String newAccessToken = jwtUtil.generateToken(memberDto, TOKEN_ACCESS_EXPIRED.plusTime);
+        String signature = newAccessToken.split("\\.")[2];
+
+        /* 레디스에 hashKey 값은 accessToken의 signature 값으로 설정 */
         redisRepository.saveRedis(
                 signature,
                 AccessTokenPayload.builder()
@@ -76,15 +75,16 @@ public class AuthorizationInterceptor implements HandlerInterceptor {
                         .name(memberDto.getName())
                         .build()
         );
-        return tokens;
+        response.addHeader("jwt-access-token", newAccessToken);
+        response.addHeader("jwt-refresh-token", refreshToken);
     }
+
     private boolean hasAccessToken(String hashKey) {
         return redisRepository.hasRedisByAccessToken(hashKey);
     }
 
     @Override
     public void postHandle(HttpServletRequest request, HttpServletResponse response, Object handler, ModelAndView modelAndView) throws Exception {
-        HandlerInterceptor.super.postHandle(request, response, handler, modelAndView);
         log.info("AuthorizationInterceptor : postHandle()");
     }
 }
